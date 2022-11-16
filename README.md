@@ -263,7 +263,7 @@ Model 4: XGBoost	                                               0.7143
 ```
 
 # Conclusion
-We started with the Multi Linear Regression model and tried three other models Logistic Regression, Decision Tree, and XGBoost. The Multi Linear Regression and Logistic Regression models performed better than the Decision Tree and XGBoost. The accuracy of Multi Linear Regression and Logistic model was `r mlr_accuracy*100`% followed by XGBoost with `r xgboost_accuracy*100`% accuracy and the decision tree with the least accuracy of `r decision_tree_accuracy*100`%.
+We started with the Multi Linear Regression model and tried three other models Logistic Regression, Decision Tree, and XGBoost. The Multi Linear Regression and Logistic Regression models performed better than the Decision Tree and XGBoost. The accuracy of Multi Linear Regression and Logistic model was 75.32% followed by XGBoost with 71.43% accuracy and the decision tree with the least accuracy of 68.83%.
 
 ## Limitations
 Insulin and SkinThickness variables were missing data. Our models could have predicted the Outcome more accurately if we had data on these variables. The algorithms' precision increases when the dataset's size is large. Hence, more data will make the model more accurate in predicting if a person has diabetes. 
