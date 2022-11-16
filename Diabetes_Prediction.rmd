@@ -1,0 +1,354 @@
+---
+title: |
+  | Diabetes Prediction Model
+  | HarvardX’s Professional Certificate in Data Science
+  | Machine Learning Capstone Project
+author: "Usha Saravanakumar"
+date: "October 2022"
+output:
+   pdf_document:
+      toc: true
+      highlight: tango
+      fig_caption: true
+      number_sections: true
+link-citations: yes
+---
+
+\newpage
+\newpage
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Introduction
+Diabetes is a chronic (long-lasting) disease that affects how our body turns food into energy. According to the _**[CDC](https://www.cdc.gov/diabetes/basics/index.html)**_, More than 37 million US adults have diabetes, and 1 in 5 do not know they have diabetes. In the last 20 years, the number of adults diagnosed with diabetes has more than doubled. Diabetes is the seventh leading cause of death in the United States. Diabetes is the No. 1 cause of kidney failure, lower-limb amputations, and adult blindness.
+This project aims at developing a machine-learning model that accurately predicts if a person has diabetes or not.
+
+## Diabetes Dataset
+The diabetes dataset used in this project is from _**[Kaggle](https://www.kaggle.com/datasets/akshaydattatraykhare/diabetes-dataset)**_, containing nine attributes for 768 entries. All patients in the dataset are females of Pima Indian heritage at least 21 years old.
+
+### Predictor Variables:
+
+- Pregnancies: Number of pregnancies
+- Glucose: Glucose level in blood
+- Blood Pressure: Blood pressure measurement
+- SkinThickness: Thickness of the skin
+- Insulin: Insulin level in the blood
+- BMI: Body mass index
+- DiabetesPedigreeFunction: Diabetes percentage
+- Age: Age
+
+### Target Variable:
+
+- Outcome: 
+  - 1: The patient has diabetes
+  - 0: The patient does not have diabetes
+
+## Process and Workflow
+The main steps in the project involve the following:
+
+- Data Extraction: Download the dataset from [Kaggle](https://www.kaggle.com/datasets/akshaydattatraykhare/diabetes-dataset/download?datasetVersionNumber=1), upload the dataset to [Github](https://raw.githubusercontent.com/ushaakumaar/diabetes_prediction/main/dataset/diabetes.csv), import the dataset from GitHub, and prepare the data
+- Exploring the dataset's structure.
+- Performing Exploratory Data Analysis (EDA).
+- Developing a machine-learning classification model for classifying the patients as diabetic or non-diabetic.
+
+# Methods/Analysis
+## Data Extraction
+### Install and import required packages
+```{r message=FALSE, warning=FALSE}
+if(!require(formatR)) install.packages("formatR", repos = "http://cran.us.r-project.org")
+if(!require(tinytex)) tinytex::install_tinytex()
+if(!require(kableExtra)) install.packages("kableExtra", repos = "http://cran.us.r-project.org")
+if(!require(tidyverse)) install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+if(!require(caret)) install.packages("caret", repos = "http://cran.us.r-project.org")
+if(!require(data.table)) install.packages("data.table", repos = "http://cran.us.r-project.org")
+if(!require(corrplot)) install.packages('corrplot', repos = "http://cran.us.r-project.org")
+if(!require(rpart)) install.packages("rpart", repos = "http://cran.us.r-project.org")
+if(!require(xgboost)) install.packages("xgboost", repos = "http://cran.us.r-project.org")
+
+library(tidyverse, warn.conflicts=F, quietly=T)
+library(caret, warn.conflicts=F, quietly=T)
+library(data.table, warn.conflicts=F, quietly=T)
+library(dplyr, warn.conflicts = F, quietly=T)
+library(kableExtra, warn.conflicts = F, quietly=T)
+library(formatR, warn.conflicts=F, quietly=T)
+library(knitr, warn.conflicts=F, quietly=T)
+library(corrplot)
+library(rpart)
+library(xgboost)
+```
+
+### Download Diabetes Dataset
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+url <- "https://raw.githubusercontent.com/ushaakumaar/diabetes_prediction/main/dataset/diabetes.csv"
+diabetes_df <- fread(url)
+head(as_tibble(diabetes_df))
+```
+## Data Exploration and Transformation
+Let us begin by splitting the dataset into training and testing datasets and then start exploring the structure of the dataset.
+
+### Split dataset to train and test datasets
+We split the Diabetes dataset into a training dataset called train_set and an evaluation dataset called test_set. The train and test set will have 90% and 10% of Diabetes data, respectively.
+```{r}
+# Training dataset will be 10% of Diabetes data
+set.seed(1)
+test_index <- createDataPartition(y = diabetes_df$Outcome, times = 1, p = 0.1, list = FALSE)
+train_set <- diabetes_df[-test_index,]
+test_set <- diabetes_df[test_index,]
+
+str(train_set)
+str(test_set)
+```
+
+### Structure of dataset
+Diabetes dataset has 768 observations, 8 predictor variables and 1 target variable. All variables are numeric.
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+str(diabetes_df)
+```
+### Summary Statistics of dataset
+The below statistics show that the minimum value for Glucose, blood pressure, skin thickness, Insulin, and BMI is 0. It is ideally impossible for a person to have 0 glucose level or blood pressure or skin thickness or insulin level, or BMI. It appears to be a data error or missing data. 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+summary(diabetes_df)
+```
+Now, let us check what percentage of each variable contains missing data. It is evident from the below table that Glucose, blood pressure, and BMI have less than 5% of data missing, while 30% of SkinThickness and almost 50% of Insulin data are incorrect or missing.
+
+```{r echo=FALSE}
+total_rows <- diabetes_df %>% nrow()
+glucose_missing_percent <- diabetes_df %>% filter(Glucose == 0) %>% nrow()/total_rows*100
+bp_missing_percent <- diabetes_df %>% filter(BloodPressure == 0) %>% nrow()/total_rows*100
+skinthickness_missing_percent <- diabetes_df %>% filter(SkinThickness == 0) %>% nrow()/total_rows*100
+insulin_missing_percent <- diabetes_df %>% filter(Insulin == 0) %>% nrow()/total_rows*100
+bmi_missing_percent <- diabetes_df %>% filter(BMI == 0) %>% nrow()/total_rows*100
+
+# Print the results
+results <- tibble(Variable = "Glucose - Missing Percentage", Percentage = glucose_missing_percent)
+results <- bind_rows(results, tibble(Variable = "BloodPressure - Missing Percentage", Percentage = bp_missing_percent))
+results <- bind_rows(results, tibble(Variable = "SkinThickness - Missing Percentage", Percentage = skinthickness_missing_percent))
+results <- bind_rows(results, tibble(Variable = "Insulin - Missing Percentage", Percentage = insulin_missing_percent))
+results <- bind_rows(results, tibble(Variable = "BMI - Missing Percentage", Percentage = bmi_missing_percent))
+results %>% 
+  kbl(caption="Percentage of Variable having Missing data", digits=4) %>%
+  kable_classic_2(full_width = T, latex_options = "hold_position")
+
+```
+### Median Imputation
+In statistics, Median imputation is the process of replacing all occurrences of missing values within a variable ("0" in our case) with the median. We can perform Median imputation when data are missing completely at random and when no more than 5% of the variable contains missing data. So, let us perform median imputation by replacing 0s with median values for Glucose, blood pressure, and BMI. The median value should be calculated only in the training set and used to replace missing data in both training and test sets to avoid over-fitting.
+```{r echo=TRUE}
+# Find median values in training set
+median_glucose <- as.integer(median(train_set$Glucose))
+median_bp <- as.integer(median(train_set$BloodPressure))
+median_bmi <- median(train_set$BMI)
+
+# Replace missing data in training set with Median
+train_set$Glucose[train_set$Glucose == 0] <- median_glucose
+train_set$BloodPressure[train_set$BloodPressure == 0] <- median_bp
+train_set$BMI[train_set$BMI == 0] <- median_bmi
+
+# Replace missing data in test set with Median
+test_set$Glucose[test_set$Glucose == 0] <- median_glucose
+test_set$BloodPressure[test_set$BloodPressure == 0] <- median_bp
+test_set$BMI[test_set$BMI == 0] <- median_bmi
+
+# Print summary statistics
+summary(train_set)
+summary(test_set)
+```
+
+### Feature Correlation Matrix
+We could observe from the below correlation matrix that Glucose, Age, Pregnancies, and BMI have the most direct correlation with Outcome. In contrast, Insulin, SkinThickness, and Blood Pressure have the most negligible direct correlation with Outcome. SkinThickness and Insulin have an inverse correlation with Age and Pregnancies.
+
+```{r echo=FALSE}
+# Print correlation matrix
+corrplot(cor(diabetes_df), 
+         main="\n\nFeature Correlation Matrix", 
+         order = "hclust", 
+         tl.col = "black", 
+         tl.srt=45, 
+         tl.cex=0.8, 
+         cl.cex=0.8)
+box(which = "outer", lty = "solid")
+```
+
+### Class Distribution
+Out of 768 entries, there are 500 with Outcome '0' and 268 with Outcome '1'. Class Imbalance is not defined formally, but a ratio of 1 to 10 is usually considered imbalanced enough to benefit from balancing techniques.
+```{r echo=FALSE}
+barplot(table(diabetes_df$Outcome), main="Class Distribution", xlab="Outcome")
+```
+
+# Machine Learning Models
+We noticed during data exploration that SkinThickness and Insulin have approximately 30% and 50% of data missing, respectively. The correlation Matrix also revealed that these variables have the most negligible direct correlation, So we will not use SkinThickness and Insulin in our Models.
+
+## Multi Linear Regression Model
+We could see from the summary that the P-values of Glucose, BMI and Pregnancies are the least so they are the top three most relevant features. 
+```{r echo=TRUE}
+# Create the model
+mlr_model <- lm(Outcome ~ . - SkinThickness - Insulin, data=train_set)
+
+# Print the model summary statistics
+summary(mlr_model)
+```
+
+### Cross Validation
+Let us test the model against test dataset and check the model accuracy.
+```{r echo=TRUE}
+# Predict outcome in the testing set
+mlr_prediction <- predict(mlr_model,newdata=test_set,type='response')
+mlr_prediction <- ifelse(mlr_prediction > 0.5,1,0)
+
+# Print confusion matrix
+(confusion_matrix_mlr<-table(mlr_prediction, test_set$Outcome))
+```
+```{r echo=FALSE}
+# Find model accuracy
+mlr_accuracy <- mean(mlr_prediction == test_set$Outcome)
+
+# Print the results
+results <- tibble(Method = "Model 1: Multi Linear Regression Model", Accuracy = mlr_accuracy)
+results %>% 
+  kbl(caption="MODEL PERFORMANCE RESULTS", digits=4) %>%
+  kable_classic_2(full_width = T, latex_options = "hold_position")
+```
+## Logistic Regression Model
+Let us try the Logistic regression model on our dataset. Since our Outcome is binary (zeroes and ones), we will use binomial distribution. We could see from the summary again that the P-values of Glucose, BMI, and Pregnancy are the least, so they are the top three most relevant features.
+```{r echo=TRUE}
+# Create the model
+logistic_reg_model <- glm(Outcome ~ . - SkinThickness - Insulin, data=train_set, family="binomial")
+
+# Print the model summary statistics
+summary(logistic_reg_model)
+```
+
+### Cross Validation
+Let us test the model against test dataset and check the model accuracy.
+```{r echo=TRUE}
+# Predict outcome in the testing set
+logistic_reg_prediction <- predict(logistic_reg_model,newdata=test_set,type='response')
+logistic_reg_prediction <- ifelse(logistic_reg_prediction > 0.5,1,0)
+
+# Print confusion matrix
+(confusion_matrix_logistic_reg<-table(logistic_reg_prediction, test_set$Outcome))
+```
+
+```{r echo=FALSE}
+# Find model accuracy
+logistic_reg_accuracy <- mean(logistic_reg_prediction == test_set$Outcome)
+
+# Print the results
+results <- bind_rows(results, tibble(Method = "Model 2: Logistic Regression", Accuracy = logistic_reg_accuracy))
+results %>% 
+  kbl(caption="MODEL PERFORMANCE RESULTS", digits=4) %>%
+  kable_classic_2(full_width = T, latex_options = "hold_position")
+```
+
+## Decision Tree
+Let us try Decision Tree model on our dataset.
+
+``` {r echo=TRUE}
+
+# Create decision tree model
+decision_tree_model <- rpart(Outcome ~ . - SkinThickness - Insulin, data=train_set,method="class")
+
+# Plot the tree
+plot(decision_tree_model, uniform=TRUE, main="Classification Tree for Diabetes")
+
+text(decision_tree_model, use.n=TRUE, all=TRUE, cex=.8)
+
+box(which = "outer", lty = "solid")
+
+```
+
+### Cross validation
+Let us test the model against test dataset and check the model accuracy. Decision tree model did not yield better accuracy than Linear regression and Logistic regression models.
+```{r echo=TRUE}
+decision_tree_prediction <- predict(decision_tree_model, test_set, type = 'class')
+(confusion_matrix_decision_tree<-table(decision_tree_prediction, test_set$Outcome))
+```
+
+```{r echo=TRUE}
+# Find model accuracy
+decision_tree_accuracy <- mean(decision_tree_prediction == test_set$Outcome)
+
+# Print the results
+results <- bind_rows(results, tibble(Method = "Model 3: Decision Tree", Accuracy = decision_tree_accuracy))
+results %>% 
+  kbl(caption="MODEL PERFORMANCE RESULTS", digits=4) %>%
+  kable_classic_2(full_width = T, latex_options = "hold_position")
+```
+## XGBoost
+Extreme Gradient Boosting (XGBoost) is one of the Boosting technique in machine learning that has been shown to produce models with high predictive accuracy.
+
+```{r echo=TRUE}
+#define predictor and response variables in training set
+train_x = data.matrix(train_set[,-9])
+train_y = as.matrix(train_set[,9])
+
+#define predictor and response variables in testing set
+test_x = data.matrix(test_set[, -9])
+test_y = as.matrix(test_set[, 9])
+
+#define final training and testing sets
+xgb_train = xgb.DMatrix(data = train_x, label = train_y)
+xgb_test = xgb.DMatrix(data = test_x, label = test_y)
+
+#define watchlist
+watchlist = list(train=xgb_train, test=xgb_test)
+
+#fit XGBoost model and display training and testing data at each round
+model = xgb.train(data = xgb_train, max.depth = 3, watchlist=watchlist, nrounds = 70)
+```
+From the output we can see that the minimum test-RMSE is achieved at 24 rounds. Beyond this point, the test-RMSE begins to increase, which is a sign that we are overfitting the training data.
+
+So, we will define our final XGBoost model to use 24 rounds.
+
+```{r echo=TRUE}
+#define final model
+final_xgboost = xgboost(data = xgb_train, max.depth = 3, nrounds = 24, verbose = 0)
+```
+
+### Cross validation
+Let us test the model against test dataset and check the model accuracy.
+```{r echo=TRUE}
+xgboost_prediction <- predict(final_xgboost, xgb_test)
+xgboost_prediction <- ifelse(xgboost_prediction > 0.5,1,0)
+```
+
+```{r echo=TRUE}
+# Find model accuracy
+xgboost_accuracy <- mean(xgboost_prediction == test_set$Outcome)
+
+# Print the results
+results <- bind_rows(results, tibble(Method = "Model 4: XGBoost", Accuracy = xgboost_accuracy))
+results %>% 
+  kbl(caption="MODEL PERFORMANCE RESULTS", digits=4) %>%
+  kable_classic_2(full_width = T, latex_options = "hold_position")
+```
+
+# Results
+Accuracy of Linear Regression and Logistic Regression models are the highest among the four machine learning models we tried our dataset on. 
+```{r echo=TRUE}
+# Print the results
+results %>% 
+  kbl(caption="MODEL PERFORMANCE RESULTS", digits=4) %>%
+  kable_classic_2(full_width = T, latex_options = "hold_position")
+```
+
+# Conclusion
+We started with the Multi Linear Regression model and tried three other models Logistic Regression, Decision Tree, and XGBoost. The Multi Linear Regression and Logistic Regression models performed better than the Decision Tree and XGBoost. The accuracy of Multi Linear Regression and Logistic model was `r mlr_accuracy*100`% followed by XGBoost with `r xgboost_accuracy*100`% accuracy and the decision tree with the least accuracy of `r decision_tree_accuracy*100`%.
+
+# Limitations
+Insulin and SkinThickness variables were missing data. Our models could have predicted the Outcome more accurately if we had data on these variables. The algorithms' precision increases when the dataset's size is large. Hence, more data will make the model more accurate in predicting if a person has diabetes. 
+
+# Future Work
+As with any such project, there is always room for improvement. As part of this project, we trained and evaluated only four predictive models on the dataset. We could train more predictive models and improve their performance with hyperparameter tuning. Also, the models' performance increases when the size of the dataset increases. So having more data will make the model more accurate in predicting if a person has diabetes.
+
+# Acknowledgments
+I want to thank the instructor, Rafael A. Irizarry of HarvardX's Professional Certificate in Data Science, for the detailed and clear explanation in his lectures throughout the series. I also want to thank and appreciate the staff and peers for providing their support, help, and guidance in the discussion forums.
+
+# Reference
+- [Diabetes Basics | CDC](https://www.cdc.gov/diabetes/basics/index.html)
+- [Diabetes Dataset | Kaggle](https://www.kaggle.com/datasets/akshaydattatraykhare/diabetes-dataset)
+- [Median Imputaion](https://medium.com/analytics-vidhya/feature-engineering-part-1-mean-median-imputation-761043b95379)
+- [Decision Tree](https://www.tutorialspoint.com/r/r_decision_tree.htm)
+- [Binary Classification Models](https://towardsdatascience.com/top-10-binary-classification-algorithms-a-beginners-guide-feeacbd7a3e2)
