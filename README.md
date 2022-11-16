@@ -97,7 +97,7 @@ We could observe from the below correlation matrix that Glucose, Age, Pregnancie
 ### Class Distribution
 Out of 768 entries, there are 500 with Outcome '0' and 268 with Outcome '1'. Class Imbalance is not defined formally, but a ratio of 1 to 10 is usually considered imbalanced enough to benefit from balancing techniques.
 
-![Class Distribution](images/class_dict.png)
+![Class Distribution](images/class_dist.png)
 
 # Machine Learning Models
 We noticed during data exploration that SkinThickness and Insulin have approximately 30% and 50% of data missing, respectively. The correlation Matrix also revealed that these variables have the most negligible direct correlation, So we will not use SkinThickness and Insulin in our Models.
