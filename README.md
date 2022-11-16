@@ -242,7 +242,7 @@ Model                                                                Accuracy
 Model 1: Multi Linear Regression Model	                               0.7532
 Model 2: Logistic Regression                                           0.7532
 Model 3: Decision Tree                                                 0.6883
-Model 4: XGBoost	                                                     0.7143
+Model 4: XGBoost	                                               0.7143
 =============================================================================
 	
 ```
@@ -257,7 +257,7 @@ Model                                                                Accuracy
 Model 1: Multi Linear Regression Model	                               0.7532
 Model 2: Logistic Regression                                           0.7532
 Model 3: Decision Tree                                                 0.6883
-Model 4: XGBoost	                                                     0.7143
+Model 4: XGBoost	                                               0.7143
 =============================================================================
 	
 ```
