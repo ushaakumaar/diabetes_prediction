@@ -1,9 +1,3 @@
----
-title: "Untitled"
-author: "Usha Saravanakumar"
-date: "2022-11-16"
-output: html_document
----
 # Introduction
 Diabetes is a chronic (long-lasting) disease that affects how our body turns food into energy. According to the _**[CDC](https://www.cdc.gov/diabetes/basics/index.html)**_, More than 37 million US adults have diabetes, and 1 in 5 do not know they have diabetes. In the last 20 years, the number of adults diagnosed with diabetes has more than doubled. Diabetes is the seventh leading cause of death in the United States. Diabetes is the No. 1 cause of kidney failure, lower-limb amputations, and adult blindness.
 This project aims at developing a machine-learning model that accurately predicts if a person has diabetes or not.
@@ -103,7 +97,7 @@ We could observe from the below correlation matrix that Glucose, Age, Pregnancie
 ### Class Distribution
 Out of 768 entries, there are 500 with Outcome '0' and 268 with Outcome '1'. Class Imbalance is not defined formally, but a ratio of 1 to 10 is usually considered imbalanced enough to benefit from balancing techniques.
 
-![Class Distribution](class_dict.png)
+![Class Distribution](images/class_dict.png)
 
 # Machine Learning Models
 We noticed during data exploration that SkinThickness and Insulin have approximately 30% and 50% of data missing, respectively. The correlation Matrix also revealed that these variables have the most negligible direct correlation, So we will not use SkinThickness and Insulin in our Models.
@@ -210,7 +204,7 @@ Model 2: Logistic Regression                                           0.7532
 ## Decision Tree
 Let us try Decision Tree model on our dataset.
 
-![Decision Tree](decision_tree.png)
+![Decision Tree](images/decision_tree.png)
 
 ### Cross validation
 Let us test the model against test dataset and check the model accuracy. Decision tree model did not yield better accuracy than Linear regression and Logistic regression models.
